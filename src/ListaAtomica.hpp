@@ -28,6 +28,10 @@ public:
 
 	void push_front(const T& val) {
 		/* Completar. Debe ser atómico. */
+		//PREGUNTAR A QUE SE REFIEREN CON ATOMICO
+		Nodo* nodillo = new Nodo(val);
+		nodillo->_next=_head;
+		_head=nodillo;
 	}
 
 	T& front() const {
