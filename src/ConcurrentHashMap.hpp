@@ -102,20 +102,33 @@ public:
     {
     	ConcurrentHashMap c;
 
-    	c.maximumFila(*((unsigned int*)ind));        
+    	c.maximumFila(*((unsigned int*)ind));
+    	//Habria que hacer esto de abajo con mutex.
+    	/*ConcurrentHashMap c;
+	    	unsigned int filaAProcesar;
+	    	while(hayFilasDisponibles){
+	    		filaAProcesar=proximaFilaDisponible();
+	    		c.maximumFila();    	
+	    	}
+    	*/
     }
 
 
 	pair<string, unsigned int> maximum(unsigned int nt){
-		pthread_t thread;
+		pthread_t thread[nt];
 		unsigned int i=0;
-		pthread_create(&thread,NULL,&(ConcurrentHashMap::thread_func),&i);
+		for (i = 0; i < nt; ++i)
+		{
+			pthread_create(&thread[i],NULL,&(ConcurrentHashMap::thread_func),&i);
+		}
 		void** returnResult;
-
+		for (i = 0; i < nt; ++i)
+		{
+			pthread_join((thread[i]),returnResult);
+		}	
 		//Si tengo nt<26  tengo que esperar que terminen los threads y crear nuevos con create?
 		// Espero a que todos terminen de buscar su maximo
 
-		pthread_join(thread,returnResult);
 		//Comparo los resultados _maximos
 		pair<string,unsigned int> maximoDeLosMaximos=_maximos[0];
 		for (int i = 1; i < 26; i++)
