@@ -11,10 +11,12 @@ int main(void) {
 	for (i = 0; i < 26; i++) {
 		for (auto it = h.tabla[i]->CrearIt(); it.HaySiguiente(); it.Avanzar()) {
 			auto t = it.Siguiente();
-			cout << t.first << " " << t.second << endl;
+			//cout << t.first << " " << t.second << endl;
 		}
 	}
 
+	pair<string, unsigned int> par = h.maximum(100);
+	cout <<" Maximo de los maximos:" << par.first <<"." << par.second << "\n";
 	return 0;
 }
 

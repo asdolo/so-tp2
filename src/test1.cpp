@@ -31,6 +31,8 @@ int main(int argc, char **argv) {
 	{
 		cout << l.iesimo(i) << "\n";
 	}
+
+	
 	
 
 	return 0;
