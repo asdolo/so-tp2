@@ -9,7 +9,7 @@ LDLIBS = -lpthread
 .cpp.o:
 	$(CXX) $(CXXFLAGS) -c $<
 
-BIN = test1 test-2 test-3 test-5
+BIN = test-1 test-2 test-3 test-4 test-5
 #OBJ = ConcurrentHashMap.o
 
 all: $(BIN)
