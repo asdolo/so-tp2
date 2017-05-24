@@ -7,13 +7,14 @@
 #include <string>       // std::string
 #include <list>
 #include <fstream>
+#include <vector>
 
 using namespace std;
 //template <typename T>
 class ConcurrentHashMap {
-private:
-	
+private:	
 	pthread_mutex_t mutexes[26];
+
 public:
 	struct datos_process_file {
 		string filePath;
@@ -34,6 +35,13 @@ public:
 		list<string> filePaths;
 		bool procesadas[26];
 		unsigned int archivosDisponibles;
+		pthread_mutex_t mutex;
+	};
+
+	struct datos_multiple_hashmap
+	{
+		vector<ConcurrentHashMap> hashMapsProcesados;
+		list<string> archivosAProcesar;
 		pthread_mutex_t mutex;
 	};
 
@@ -230,11 +238,6 @@ unsigned int proximaFilaDisponible(bool* array){
 		return maximoDeLosMaximos;
 	}
 
-	static pair<string, unsigned int> maximum(unsigned int i,unsigned int m ,list<string> l){
-		pair<string, unsigned int> p;
-		return p;
-	}
-
 	static ConcurrentHashMap count_words(string arch){
 		std::ifstream file(arch);
     	std::string str; 
@@ -271,6 +274,7 @@ unsigned int proximaFilaDisponible(bool* array){
 	}
 
 	static void thread_process_file(string arch, ConcurrentHashMap* c){
+		
 		std::ifstream file(arch);
     	std::string str; 
 	    while (std::getline(file, str))
@@ -284,8 +288,6 @@ unsigned int proximaFilaDisponible(bool* array){
 
 		datos_process_file estr = *((datos_process_file*) (estructura));
 		
-		
-
     	estr.c->thread_process_file(estr.filePath, estr.c);
 
 	}
@@ -319,12 +321,7 @@ unsigned int proximaFilaDisponible(bool* array){
 	    return c;
 	}
 
-
-
-
-
-
-	 static void *countWordsAuxiliarNThreads(void* estruc)
+	static void *countWordsAuxiliarNThreads(void* estruc)
     {
     	count_words_n_threads_struct* estructura = (count_words_n_threads_struct*)estruc;
 
@@ -347,6 +344,95 @@ unsigned int proximaFilaDisponible(bool* array){
 		
     	
     }
+
+
+    static void* thread_process_file_new_hashmap(void* estruc)
+    {
+    	// TODO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    	// TODO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    	// TODO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    	// TODO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    	// TODO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    	// TODO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    	// TODO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    	// TODO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    	// TODO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    	// TODO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    	// TODO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    }
+
+
+
+/*
+struct datos_multiple_hashmap
+	{
+		list<ConcurrentHashMap> hashMapsProcesados;
+		list<string> archivosAProcesar;
+		pthread_mutex_t mutex;
+	};
+*/
+    static pair<string, unsigned int> maximum(unsigned int p_archivos, unsigned int p_maximos, list<string> archs)
+    {
+    	// Creamos p_archivos threads
+		pthread_t threads_archivos[p_archivos];
+
+		struct datos_multiple_hashmap estructura_datos;
+		
+		// Inicializamos la lista de info de archivos
+		estructura_datos.archivosAProcesar = archs;
+
+		//Inicializo el mutex que sera utilizado para asignar filas a los threads
+		pthread_mutex_init(&estructura_datos.mutex, NULL);
+
+		for (int i = 0; i < p_archivos; i++)
+		{
+			pthread_create(&threads_archivos[i], NULL, &(ConcurrentHashMap::thread_process_file_new_hashmap), &estructura_datos);
+		}
+
+		// Espero a que se creen todos los ConcurrentHashMap
+		for (int i = 0; i < p_archivos; ++i)
+		{
+			pthread_join((threads_archivos[i]),NULL);
+		}
+
+		for (int i = 1; i < p_archivos; i++)
+		{
+			estructura_datos.hashMapsProcesados[0].merge(&(estructura_datos.hashMapsProcesados[i]));
+		}
+		//Calculo el maximo del hashmap final.
+		return estructura_datos.hashMapsProcesados[0].maximum(p_maximos);
+
+    }
+
+	void merge (ConcurrentHashMap* source)
+	{
+		for (int i = 0; i < 26; i++)
+		{
+			// obtenemos un iterador a la lista correspondiente a la letra actual de source
+			Lista<pair<string, unsigned int>>::Iterador iteradorListaActual = source->tabla[i]->CrearIt();
+			
+			// Para cada palabra de la lista actual, la agrego a this
+			while(iteradorListaActual.HaySiguiente())
+			{
+				// Agrego la palabra actual a this tantas veces como aparezca en source 
+				for (int j = 0; j < iteradorListaActual.Siguiente().second; j++)
+				{
+					this->addAndInc(iteradorListaActual.Siguiente().first);
+				}
+
+				iteradorListaActual.Avanzar();
+			}
+
+
+		}
+	
+
+	}
+
+
+
 };
+
+
 
 #endif 
