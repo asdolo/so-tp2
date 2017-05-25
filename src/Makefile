@@ -1,3 +1,5 @@
+#!/bin/bash
+
 .POSIX:
 .SUFFIXES:
 .SUFFIXES: .o .cpp
@@ -9,10 +11,18 @@ LDLIBS = -lpthread
 .cpp.o:
 	$(CXX) $(CXXFLAGS) -c $<
 
-BIN = test-1 test-2 test-3 test-4 test-5
+BIN = test-1 test-2 test-3 test-4 test-5 crearArchivo1a1000
 #OBJ = ConcurrentHashMap.o
 
 all: $(BIN)
+
+test-1: $(OBJ) test-1.cpp
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ test-1.cpp $(OBJ) $(LDLIBS)
+	
+test-1-run: test-1 crearArchivo1a1000
+	./crearArchivo1a1000 > corpus-numbers
+	./test-1 | sort -n | diff -u - corpus-numbers
+	rm -f corpus-numbers
 
 test-2: $(OBJ) test-2.cpp
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ test-2.cpp $(OBJ) $(LDLIBS)

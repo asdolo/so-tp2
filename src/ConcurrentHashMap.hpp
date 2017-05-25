@@ -348,36 +348,34 @@ unsigned int proximaFilaDisponible(bool* array){
 
     static void* thread_process_file_new_hashmap(void* estruc)
     {
-    	// TODO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    	// TODO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    	// TODO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    	// TODO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    	// TODO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    	// TODO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    	// TODO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    	// TODO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    	// TODO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    	// TODO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    	// TODO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    	datos_multiple_hashmap* estructura = (datos_multiple_hashmap*)estruc;
+
+    	string archivoAProcesar;
+    	
+    	pthread_mutex_lock(&(estructura->mutex));
+
+    	while(estructura->archivosAProcesar.size()>0){
+    		
+    	 	archivoAProcesar = estructura->archivosAProcesar.front();
+    		estructura->archivosAProcesar.pop_front();
+    		pthread_mutex_unlock(&(estructura->mutex));
+    		ConcurrentHashMap c= ConcurrentHashMap::count_words(archivoAProcesar);
+    		pthread_mutex_lock(&(estructura->mutex));
+    		estructura->hashMapsProcesados.push_back(c);
+
+    	}
+    	pthread_mutex_unlock(&(estructura->mutex));
     }
 
 
 
-/*
-struct datos_multiple_hashmap
-	{
-		list<ConcurrentHashMap> hashMapsProcesados;
-		list<string> archivosAProcesar;
-		pthread_mutex_t mutex;
-	};
-*/
     static pair<string, unsigned int> maximum(unsigned int p_archivos, unsigned int p_maximos, list<string> archs)
     {
     	// Creamos p_archivos threads
 		pthread_t threads_archivos[p_archivos];
 
 		struct datos_multiple_hashmap estructura_datos;
-		
+
 		// Inicializamos la lista de info de archivos
 		estructura_datos.archivosAProcesar = archs;
 
@@ -395,7 +393,7 @@ struct datos_multiple_hashmap
 			pthread_join((threads_archivos[i]),NULL);
 		}
 
-		for (int i = 1; i < p_archivos; i++)
+		for (int i = 1; i < estructura_datos.hashMapsProcesados.size(); i++)
 		{
 			estructura_datos.hashMapsProcesados[0].merge(&(estructura_datos.hashMapsProcesados[i]));
 		}
@@ -404,6 +402,12 @@ struct datos_multiple_hashmap
 
     }
 
+static pair<string, unsigned int> maximum2(unsigned int p_archivos, unsigned int p_maximos, list<string> archs)
+    {
+    	ConcurrentHashMap c=count_words(p_archivos,archs);
+    	return c.maximum(p_maximos);
+    	
+    }
 	void merge (ConcurrentHashMap* source)
 	{
 		for (int i = 0; i < 26; i++)

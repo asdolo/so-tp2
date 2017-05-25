@@ -11,6 +11,8 @@ void* incrementar(void* i){
 }
 int main(int argc, char **argv) {
 
+	//Probando push_front de lista. 
+	//Si no funcionaria explotaria al querer agregar dos threads en la misma lista.
 	pthread_t thread[1000];
 	int arr[1000];
 	for (int i = 0; i < 1000; ++i)
@@ -31,9 +33,6 @@ int main(int argc, char **argv) {
 	{
 		cout << l.iesimo(i) << "\n";
 	}
-
-	
-	
 
 	return 0;
 }
