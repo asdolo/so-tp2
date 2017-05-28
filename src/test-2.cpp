@@ -14,9 +14,6 @@ int main(void) {
 			cout << t.first << " " << t.second << endl;
 		}
 	}
-
-	// pair<string, unsigned int> par = h.maximum(100);
-	// cout <<" Maximo de los maximos:" << par.first <<"." << par.second << "\n";
 	return 0;
 }
 

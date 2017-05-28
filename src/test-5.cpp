@@ -12,7 +12,7 @@ int main(int argc, char **argv) {
 		cerr << "uso: " << argv[0] << " #tarchivos #tmaximum" << endl;
 		return 1;
 	}
-	p = ConcurrentHashMap::maximum2(atoi(argv[1]), atoi(argv[2]), l);
+	p = ConcurrentHashMap::maximum(atoi(argv[1]), atoi(argv[2]), l);
 	cout << p.first << " " << p.second << endl;
 
 	return 0;

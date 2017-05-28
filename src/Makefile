@@ -11,7 +11,7 @@ LDLIBS = -lpthread
 .cpp.o:
 	$(CXX) $(CXXFLAGS) -c $<
 
-BIN = test-1 test-2 test-3 test-4 test-5 crearArchivo1a1000
+BIN = test-1 test-2 test-3 test-4 test-5 test-6-a test-6-b test-6
 #OBJ = ConcurrentHashMap.o
 
 all: $(BIN)
@@ -19,10 +19,8 @@ all: $(BIN)
 test-1: $(OBJ) test-1.cpp
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ test-1.cpp $(OBJ) $(LDLIBS)
 	
-test-1-run: test-1 crearArchivo1a1000
-	./crearArchivo1a1000 > corpus-numbers
-	./test-1 | sort -n | diff -u - corpus-numbers
-	rm -f corpus-numbers
+test-1-run: test-1 
+	./test-1
 
 test-2: $(OBJ) test-2.cpp
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ test-2.cpp $(OBJ) $(LDLIBS)
@@ -62,6 +60,42 @@ test-5-run: test-5
 	done; done
 	rm -f corpus-max corpus-[0-4]
 
+
+test-6-a: $(OBJ) test-6-a.cpp
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ test-6-a.cpp $(OBJ) $(LDLIBS)
+	
+test-6-a-run: test-6-a 
+	awk -f corpus.awk corpus | sort -nk 2 | tail -n 1 >corpus-max
+	cat corpus-max
+	for i in 0 1 2 3 4; do sed -n "$$((i * 500 + 1)),$$(((i + 1) * 500))p" corpus >corpus-"$$i"; done
+	for i in 0 1 2 3 4; do for j in 0 1 2 3 4; do \
+		./test-6-a $$((i + 1)) $$((j + 1)) ; \
+	done; done
+	rm -f corpus-max corpus-[0-4]
+
+test-6-b: $(OBJ) test-6-b.cpp
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ test-6-b.cpp $(OBJ) $(LDLIBS)
+	
+test-6-b-run: test-6-b 
+	awk -f corpus.awk corpus | sort -nk 2 | tail -n 1 >corpus-max
+	cat corpus-max
+	for i in 0 1 2 3 4; do sed -n "$$((i * 500 + 1)),$$(((i + 1) * 500))p" corpus >corpus-"$$i"; done
+	for i in 0 1 2 3 4; do for j in 0 1 2 3 4; do \
+		./test-6-b $$((i + 1)) $$((j + 1)) ; \
+	done; done
+	rm -f corpus-max corpus-[0-4]
+
+test-6: $(OBJ) test-6.cpp
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -lrt -o $@ test-6.cpp $(OBJ) $(LDLIBS)
+	
+test-6-run: test-6 
+	awk -f corpus.awk corpus | sort -nk 2 | tail -n 1 >corpus-max
+	cat corpus-max
+	for i in 0 1 2 3 4; do sed -n "$$((i * 500 + 1)),$$(((i + 1) * 500))p" corpus >corpus-"$$i"; done
+	for i in 0 1 2 3 4; do for j in 0 1 2 3 4; do \
+		./test-6 $$((i + 1)) $$((j + 1)) ; \
+	done; done
+	rm -f corpus-max corpus-[0-4]
 clean:
 	rm -f $(BIN) $(OBJ)
 	rm -f corpus-*
