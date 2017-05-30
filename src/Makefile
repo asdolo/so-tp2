@@ -91,8 +91,8 @@ test-6: $(OBJ) test-6.cpp
 test-6-run: test-6 
 	awk -f corpus.awk corpus | sort -nk 2 | tail -n 1 >corpus-max
 	cat corpus-max
-	for i in 0 1 2 3 4; do sed -n "$$((i * 500 + 1)),$$(((i + 1) * 500))p" corpus >corpus-"$$i"; done
-	for i in 0 1 2 3 4; do for j in 0 1 2 3 4; do \
+	for i in 0 1 3 7 ; do sed -n "$$((i * 500 + 1)),$$(((i + 1) * 500))p" corpus >corpus-"$$i"; done
+	for i in 0 1 3 7; do for j in 0 1 3 7; do \
 		./test-6 $$((i + 1)) $$((j + 1)) ; \
 	done; done
 	rm -f corpus-max corpus-[0-4]
