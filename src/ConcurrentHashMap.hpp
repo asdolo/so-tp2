@@ -33,7 +33,7 @@ public:
 	{
 		ConcurrentHashMap* clase;
 		list<string> filePaths;
-		bool procesadas[26];
+		
 		unsigned int archivosDisponibles;
 		pthread_mutex_t mutex;
 	};
@@ -303,10 +303,7 @@ unsigned int proximaFilaDisponible(bool* array){
 		estructura.clase = &c;
 		pthread_mutex_init(&estructura.mutex, NULL);
 
-		for (int i = 0; i < 26; i++)
-		{
-			estructura.procesadas[i]=false;	
-		}
+
 		for (int i = 0; i < n; ++i)
 		{
 			pthread_create(&threads[i],NULL,&(ConcurrentHashMap::countWordsAuxiliarNThreads),&estructura);
