@@ -32,12 +32,10 @@ public:
 	}
 
 	void push_front(const T& val) {
-		/* Completar. Debe ser atómico. */
-		//PREGUNTAR A QUE SE REFIEREN CON ATOMICO
-		Nodo* nodillo = new Nodo(val);
+		Nodo* nuevo_nodo = new Nodo(val);
 		pthread_mutex_lock(&mutex_lista);
-		nodillo->_next=_head;
-		_head=nodillo;
+		nuevo_nodo->_next = _head;
+		_head = nuevo_nodo;
 		pthread_mutex_unlock(&mutex_lista);
 	}
 
