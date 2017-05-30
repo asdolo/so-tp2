@@ -14,10 +14,10 @@ private:
 	};
 
 	std::atomic<Nodo *> _head;
-	pthread_mutex_t mutex;
+	pthread_mutex_t mutex_lista;
 public:
 	Lista() : _head(nullptr) {
-		pthread_mutex_init(&mutex, NULL);
+		pthread_mutex_init(&mutex_lista, NULL);
 
 		}
 	~Lista() {
@@ -28,17 +28,17 @@ public:
 			n = n->_next;
 			delete t;
 		}
-		pthread_mutex_destroy(&mutex);
+		pthread_mutex_destroy(&mutex_lista);
 	}
 
 	void push_front(const T& val) {
 		/* Completar. Debe ser atómico. */
 		//PREGUNTAR A QUE SE REFIEREN CON ATOMICO
 		Nodo* nodillo = new Nodo(val);
-		pthread_mutex_lock(&mutex);
+		pthread_mutex_lock(&mutex_lista);
 		nodillo->_next=_head;
 		_head=nodillo;
-		pthread_mutex_unlock(&mutex);
+		pthread_mutex_unlock(&mutex_lista);
 	}
 
 	T& front() const {
