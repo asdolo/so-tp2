@@ -13,14 +13,14 @@ using namespace std;
 int main(int argc, char **argv) {
 
 	pair<string, unsigned int> p;
-	list<string> l = { "corpus-0", "corpus-1", "corpus-2", "corpus-3", "corpus-4" };
+	list<string> l = { "corpus-0", "corpus-1", "corpus-2", "corpus-3", "corpus-4","superArchivo","superArchivo","superArchivo" };
 
 	if (argc != 3) {
 		cerr << "uso: " << argv[0] << " #tarchivos #tmaximum" << endl;
 		return 1;
 	}
   	 struct timespec start, stop;
-    double accum;
+    unsigned long accum;
 
     if( clock_gettime( CLOCK_REALTIME, &start) == -1 ) {
       perror( "clock gettime" );
@@ -33,12 +33,10 @@ int main(int argc, char **argv) {
       exit( EXIT_FAILURE );
     }
 
-    accum = ( stop.tv_sec - start.tv_sec )
-          + ( stop.tv_nsec - start.tv_nsec )
-            ;
+     accum =  ((stop.tv_sec - start.tv_sec)*1000000000L) +( stop.tv_nsec - start.tv_nsec ) ;
     
     struct timespec start2, stop2;
-    double accum2;
+    unsigned long accum2;
 
     if( clock_gettime( CLOCK_REALTIME, &start2) == -1 ) {
       perror( "clock gettime" );
@@ -51,10 +49,9 @@ int main(int argc, char **argv) {
       exit( EXIT_FAILURE );
     }
 
-    accum2 = ( stop2.tv_sec - start2.tv_sec )
-          + ( stop2.tv_nsec - start2.tv_nsec )
+    accum2 =  ((stop2.tv_sec - start2.tv_sec)*1000000000L) +( stop2.tv_nsec - start2.tv_nsec ) ;
             ;
-    printf( "Cantidad de archivos:%d\nCantidad de threads:%d\nTiempo con maximum :%lf\nTiempo con maximum2 :%lf\nDiferencia de tiempos :%lf\n\n",atoi(argv[1]), atoi(argv[2]),(double)accum, (double) accum2, (double)(accum-accum2 ));
+    printf( "Cantidad de archivos:%d\nCantidad de threads:%d\nTiempo con maximum :%ld ns\nTiempo con maximum2 :%ld ns\nDiferencia de tiempos :%ld ns\n\n",atoi(argv[1]), atoi(argv[2]),( long)accum, ( long) accum2, ( long)(accum-accum2 ));
 
 	
 	
