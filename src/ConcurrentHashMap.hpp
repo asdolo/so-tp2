@@ -36,9 +36,8 @@ public:
 
 	struct datos_multiple_hashmap
 	{
-		vector<ConcurrentHashMap> hashMapsProcesados;
-		list<string> archivosAProcesar;
-		pthread_mutex_t mutex;
+		std::vector<string> archivosAProcesar;
+		atomic<int> archivosDisponibles;
 	};
 
 	Lista<pair<string,unsigned int>>* tabla[26];
@@ -327,23 +326,21 @@ public:
 
     static void* thread_process_file_new_hashmap(void* estruc)
     {
+    	ConcurrentHashMap* resultado= new ConcurrentHashMap();
     	datos_multiple_hashmap* estructura = (datos_multiple_hashmap*)estruc;
 
-    	string archivoAProcesar;
-    	
-    	pthread_mutex_lock(&(estructura->mutex));
+    	// obtenemos el indice de forma atomica
+    	int ind = estructura->archivosDisponibles--;
 
-    	while(estructura->archivosAProcesar.size()>0){
-    		
-    	 	archivoAProcesar = estructura->archivosAProcesar.front();
-    		estructura->archivosAProcesar.pop_front();
-    		pthread_mutex_unlock(&(estructura->mutex));
+    	while(ind>0){
+    		string archivoAProcesar = (estructura->archivosAProcesar)[ind-1];
     		ConcurrentHashMap c= ConcurrentHashMap::count_words(archivoAProcesar);
-    		pthread_mutex_lock(&(estructura->mutex));
-    		estructura->hashMapsProcesados.push_back(c);
-
+    		resultado->merge(&c);
+    		ind = estructura->archivosDisponibles--;
     	}
-    	pthread_mutex_unlock(&(estructura->mutex));
+    	
+
+    	return (void*)resultado;
     }
 
 
@@ -356,11 +353,10 @@ public:
 		struct datos_multiple_hashmap estructura_datos;
 
 		// Inicializamos la lista de info de archivos
-		estructura_datos.archivosAProcesar = archs;
-
-		//Inicializo el mutex que sera utilizado para asignar filas a los threads
-		pthread_mutex_init(&estructura_datos.mutex, NULL);
-
+		std::vector<string> v{ std::begin(archs), std::end(archs) };
+		estructura_datos.archivosAProcesar = v;		
+		estructura_datos.archivosDisponibles = v.size();
+		ConcurrentHashMap total;
 		for (int i = 0; i < p_archivos; i++)
 		{
 			pthread_create(&threads_archivos[i], NULL, &(ConcurrentHashMap::thread_process_file_new_hashmap), &estructura_datos);
@@ -369,23 +365,21 @@ public:
 		// Espero a que se creen todos los ConcurrentHashMap
 		for (int i = 0; i < p_archivos; ++i)
 		{
-			pthread_join((threads_archivos[i]),NULL);
-		}
-
-		for (int i = 1; i < estructura_datos.hashMapsProcesados.size(); i++)
-		{
-			estructura_datos.hashMapsProcesados[0].merge(&(estructura_datos.hashMapsProcesados[i]));
+			void* result;
+			pthread_join((threads_archivos[i]), &result);
+			ConcurrentHashMap* c=(ConcurrentHashMap*)result;
+			total.merge(c);
+			delete c;
 		}
 		//Calculo el maximo del hashmap final.
-		return estructura_datos.hashMapsProcesados[0].maximum(p_maximos);
+		return total.maximum(p_maximos);
 
     }
 
 static pair<string, unsigned int> maximum2(unsigned int p_archivos, unsigned int p_maximos, list<string> archs)
     {
-    	ConcurrentHashMap c=count_words(p_archivos,archs);
+    	ConcurrentHashMap c = count_words(p_archivos,archs);
     	return c.maximum(p_maximos);
-    	
     }
 	void merge (ConcurrentHashMap* source)
 	{
