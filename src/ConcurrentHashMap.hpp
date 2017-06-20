@@ -8,7 +8,7 @@
 #include <list>
 #include <fstream>
 #include <vector>
-
+#include <assert.h>     /* assert */
 using namespace std;
 //template <typename T>
 class ConcurrentHashMap {
@@ -23,19 +23,15 @@ public:
 
 	struct maximum_struct {
 		ConcurrentHashMap* clase;
-		unsigned int filasDisponibles;
-		pthread_mutex_t mutex;
-		bool procesadas[26];
-		pair<string,unsigned int> _maximos[26];
+		atomic<int> filasDisponibles;
 	};
 
 	struct count_words_n_threads_struct
 	{
 		ConcurrentHashMap* clase;
-		list<string> filePaths;
+		std::vector<string> filePaths;
+		atomic<int> archivosDisponibles;
 		
-		unsigned int archivosDisponibles;
-		pthread_mutex_t mutex;
 	};
 
 	struct datos_multiple_hashmap
@@ -130,8 +126,8 @@ public:
 		return (unsigned int)a-97;
 	}
 	
-	// Busca el máximo de la fila indicada en el parámetro ind y lo guarda en el puntero a arreglo de par del parámetro arreglo
-	void *maximumFila(unsigned int ind, pair<string,unsigned int>* arreglo)
+	// Busca el máximo de la fila indicada en el parámetro ind y lo devuelve en un par
+	pair<string, unsigned int> maximumFila(unsigned int ind)
     {
 		pair<string,unsigned int> maximo;
 		
@@ -151,38 +147,29 @@ public:
 			}
 			iteradorListaActual.Avanzar();
 		}
-		arreglo[ind] = maximo;
+		
 		pthread_mutex_unlock(&mutexes[ind]);		
+    	return maximo;
     }
-
+    
     static void *maximumThread(void* data)
     {
     	// Casteo lo que me pasaron al tipo (maximum_struct*)
+    	pair<string, unsigned int>* result = new pair<string, unsigned int>();
+    	result->second=0;
     	maximum_struct* estructura = (maximum_struct*) data;
-
-    	unsigned int filaAProcesar;
-    	// Bloqueo el mutex que tienen todos los threads
-    	// así me fijo qué fila está disponible para procesar
-    	// y además modifico la estructura poniendo como procesada la fila que me ponga a procesar
-    	pthread_mutex_lock(&(estructura->mutex));
-    	while(estructura->filasDisponibles>0){
-    		// Alguna fila queda disponible
-    		estructura->filasDisponibles--;
-    		// Busco cuál es dicha fila disponible
-    		filaAProcesar = estructura->clase->proximaFilaDisponible((estructura->procesadas));
-    		// Desbloqueo el mutex porque ya tengo la fila que tengo que procesar y ya la marqué como procesada,
-		// así que ningún otro thread me va a molestar con esta fila
-    		pthread_mutex_unlock(&(estructura->mutex));
-    		
-    		// Busco el máximo de la fila. La función maximumFila verifica 
-    		// no estar ejecutándose a la par de addAndInc
-    		estructura->clase->maximumFila(filaAProcesar, (estructura->_maximos));
-    		// Bloqueo el mutex para consultar si hay alguna fila disponible (El while)
-		pthread_mutex_lock(&(estructura->mutex));
+    	int filaAProcesar = estructura->filasDisponibles--;
+    	while(filaAProcesar>0)
+    	{
+    		pair<string, unsigned int> resultInterno = estructura->clase->maximumFila(filaAProcesar-1);
+    		if (result->second<resultInterno.second)
+    		{ 
+    			*result=resultInterno;
+     		}
+    		filaAProcesar = estructura->filasDisponibles--;
     	}
-    	// Desbloqueo. No hay mas filas disponibles
-    	pthread_mutex_unlock(&(estructura->mutex));		
     	
+    	return (void*)result;
     }
 	
     
@@ -211,15 +198,10 @@ public:
 		maximum_struct estructura;
 		estructura.filasDisponibles = 26;
 		estructura.clase = this;
-		// Inicializo el mutex que será utilizado para asignar filas a los threads
-		pthread_mutex_init(&estructura.mutex, NULL);
 		
-		// Inicializo un array de bools de filas procesadas
-		for (int i = 0; i < 26; i++)
-		{
-			estructura.procesadas[i] = false;	
-		}
-		
+		pair<string, unsigned int> maximoDeLosMaximos;
+		maximoDeLosMaximos.second=0;
+
 		//Ejecuto los nt threads
 		for (int i = 0; i < nt; ++i)
 		{
@@ -229,17 +211,16 @@ public:
 		// Espero que los nt threads terminen
 		for (int i = 0; i < nt; ++i)
 		{
-			pthread_join(thread[i], NULL);
-		}
-		
-		// Comparo los resultados en estructura._maximos
-		pair<string, unsigned int> maximoDeLosMaximos = estructura._maximos[0];
-		for (int i = 1; i < 26; i++)
-		{
-			if (estructura._maximos[i].second > maximoDeLosMaximos.second)
+			void* result;
+			pthread_join(thread[i], &result);
+			
+			if (maximoDeLosMaximos.second < ((pair<string,unsigned int>*)result)->second)
 			{
-				maximoDeLosMaximos = estructura._maximos[i];
+				
+				maximoDeLosMaximos= *((pair<string,unsigned int>*)result);
 			}
+			//lo borro
+			delete (pair<string,unsigned int>*) result;
 		}
 		
 		return maximoDeLosMaximos;
@@ -299,18 +280,17 @@ public:
 
 	}
 
-	static ConcurrentHashMap count_words(unsigned int n,list<string> l){
+	static ConcurrentHashMap count_words(unsigned int n, list<string> l){
 
 	    ConcurrentHashMap c;
 	    // Un thread por archivo
 		pthread_t threads[n];
 		count_words_n_threads_struct estructura;
-		estructura.filePaths=l;
-		estructura.archivosDisponibles=l.size();
+		std::vector<string> v{ std::begin(l), std::end(l) };
+		estructura.filePaths=v;
+		
+		estructura.archivosDisponibles = v.size();
 		estructura.clase = &c;
-		pthread_mutex_init(&estructura.mutex, NULL);
-
-
 		for (int i = 0; i < n; ++i)
 		{
 			pthread_create(&threads[i],NULL,&(ConcurrentHashMap::countWordsAuxiliarNThreads),&estructura);
@@ -329,22 +309,17 @@ public:
     {
     	count_words_n_threads_struct* estructura = (count_words_n_threads_struct*)estruc;
 
-    	string archivoAProcesar;
-    	
-    	pthread_mutex_lock(&(estructura->mutex));
-    	while(estructura->archivosDisponibles>0){
-    		
-    		estructura->archivosDisponibles--;
-    		archivoAProcesar = estructura->filePaths.front();
-    		 estructura->filePaths.pop_front();
-    		pthread_mutex_unlock(&(estructura->mutex));
-
+    	// obtenemos el indice de forma atomica
+    	int ind = estructura->archivosDisponibles--;
+    	while(ind>0)
+    	{
+    		string archivoAProcesar = (estructura->filePaths)[ind-1];
     		
     		estructura->clase->thread_process_file(archivoAProcesar, estructura->clase);
 
-			pthread_mutex_lock(&(estructura->mutex));
+			ind = estructura->archivosDisponibles--;
     	}
-    	pthread_mutex_unlock(&(estructura->mutex));
+    	
 		
     	
     }

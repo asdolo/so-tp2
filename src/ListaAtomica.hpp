@@ -33,11 +33,9 @@ public:
 
 	void push_front(const T& val) {
 		Nodo* nuevo_nodo = new Nodo(val);
-		pthread_mutex_lock(&mutex_lista);
-		nuevo_nodo->_next = _head;
-		_head = nuevo_nodo;
-		pthread_mutex_unlock(&mutex_lista);
+		nuevo_nodo->_next = _head.exchange(nuevo_nodo);
 	}
+ 
 
 	T& front() const {
 		return _head.load()->_val;
